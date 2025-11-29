@@ -7,6 +7,8 @@ import java.util.List;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.userservice.exception.UserException;
 import com.example.userservice.model.User;
@@ -27,6 +29,8 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	@Cacheable(value = "users")
+	@Transactional(readOnly = true)
 	public List<User> getAllUsers() {
 		log.info("Retrieving all users");
 		try {
@@ -40,6 +44,24 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	@Cacheable(value = "users", key = "#id")
+	@Transactional(readOnly = true)
+	public User getUserById(String id) {
+		log.info("Retrieving user with id: {}", id);
+		try {
+			return userRepository.findById(id)
+					.orElseThrow(() -> {
+						log.warn("User not found with id: {}", id);
+						return new UserException("User not found with id: " + id);
+					});
+		} catch (Exception e) {
+			log.error("An error occurred while retrieving user with id: {}", id, e);
+			throw new UserException("Failed to fetch user: " + e.getMessage(), e);
+		}
+	}
+
+	@Override
+	@Transactional(isolation = Isolation.READ_COMMITTED)
 	public User createUser(User user) {
 		log.info("Creating a new user with email: {}", user.getEmail());
 		try {
@@ -61,6 +83,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	@Transactional(isolation = Isolation.READ_COMMITTED)
 	public void deleteUser(String id) {
 		log.info("Attempting to delete user with id: {}", id);
 		try {
@@ -77,22 +100,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	@Cacheable(value = "users", key = "#id")
-	public User getUserById(String id) {
-		log.info("Retrieving user with id: {}", id);
-		try {
-			return userRepository.findById(id)
-					.orElseThrow(() -> {
-						log.warn("User not found with id: {}", id);
-						return new UserException("User not found with id: " + id);
-					});
-		} catch (Exception e) {
-			log.error("An error occurred while retrieving user with id: {}", id, e);
-			throw new UserException("Failed to fetch user: " + e.getMessage(), e);
-		}
-	}
-
-	@Override
+	@Transactional(isolation = Isolation.READ_COMMITTED)
 	public User updateUser(String id, User user) {
 		log.info("Updating user with id: {}", id);
 		try {
