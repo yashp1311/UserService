@@ -1,0 +1,28 @@
+services:
+  user-service:
+    container_name: user-service
+    image: user-service
+    build:
+      context: .
+      dockerfile: dockerfile
+    ports:
+      - '8081:8081'
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/userservice
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=root
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8080/eureka/
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - EUREKA_INSTANCE_HOSTNAME=user-service
+      - EUREKA_INSTANCE_LEASE_RENEWAL_INTERVAL_IN_SECONDS=10
+      - EUREKA_INSTANCE_LEASE_EXPIRATION_DURATION_IN_SECONDS=30
+      - SPRING_DATA_REDIS_HOST=redis-12798.crce206.ap-south-1-1.ec2.redns.redis-cloud.com
+      - SPRING_DATA_REDIS_PORT=12798
+      - SPRING_DATA_REDIS_PASSWORD=M9CjUhroDGjC5p7J7VGvz6L7EiyBxLCB
+    networks:
+      - service-registry-network
+    restart: on-failure
+networks:
+  service-registry-network:
+    external: true
