@@ -1,6 +1,7 @@
 package com.example.userservice.model;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -54,6 +55,9 @@ public class User implements Serializable {
 
 	@Column(name = "last_login")
 	private String lastLogin;
+
+	@Column(name = "ratings")
+	private List<Rating> ratings;
 
 	@PrePersist
 	protected void onCreate() {

@@ -7,12 +7,17 @@ import java.util.List;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.dao.DataAccessException;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 import com.example.userservice.exception.UserException;
+import com.example.userservice.model.Rating;
 import com.example.userservice.model.User;
 import com.example.userservice.repository.UserRepository;
 
@@ -24,17 +29,18 @@ public class UserServiceImpl implements UserService {
 
 	private static final DateTimeFormatter dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 	private final UserRepository userRepository;
+	private final RestTemplate restTemplate;
 
-	public UserServiceImpl(UserRepository userRepository) {
+	public UserServiceImpl(UserRepository userRepository, RestTemplate restTemplate) {
 		this.userRepository = userRepository;
-		log.info("User service implementation initialized with repository");
+		this.restTemplate = restTemplate;
 	}
 
 	@Override
 	@Cacheable(value = "users")
 	@Transactional(readOnly = true)
 	public List<User> getAllUsers() {
-		log.info("Retrieving all users");
+		log.info("Retrieving all users.");
 		try {
 			List<User> users = userRepository.findAll();
 			log.debug("Successfully retrieved {} users", users.size());
@@ -51,12 +57,22 @@ public class UserServiceImpl implements UserService {
 	public User getUserById(String id) {
 		log.info("Retrieving user with id: {}", id);
 		try {
-			return userRepository.findById(id)
+			User user = userRepository.findById(id)
 					.orElseThrow(() -> {
 						log.warn("User not found with id: {}", id);
 						return new UserException("User not found with id: " + id);
 					});
-		} catch (Exception e) {
+			List<Rating> ratings = restTemplate.exchange(
+					"http://RATING-SERVICE/ratings/user/" + user.getUserId(),
+					HttpMethod.GET, null, new ParameterizedTypeReference<List<Rating>>() {
+					}).getBody();
+			if (ratings != null) {
+				log.debug("Fetched {} ratings for user id: {}", ratings.size(), user.getUserId());
+			}
+			user.setRatings(ratings);
+			log.debug("Successfully retrieved user with id: {}", user.getUserId());
+			return user;
+		} catch (UserException | RestClientException e) {
 			log.error("An error occurred while retrieving user with id: {}", id, e);
 			throw new UserException("Failed to fetch user: " + e.getMessage(), e);
 		}
