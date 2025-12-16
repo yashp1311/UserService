@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -61,6 +63,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	@CacheEvict(value = "users", allEntries = true)
 	@Transactional(isolation = Isolation.READ_COMMITTED)
 	public User createUser(User user) {
 		log.info("Creating a new user with email: {}", user.getEmail());
@@ -83,6 +86,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	@CacheEvict(value = "users", allEntries = true)
 	@Transactional(isolation = Isolation.READ_COMMITTED)
 	public void deleteUser(String id) {
 		log.info("Attempting to delete user with id: {}", id);
@@ -100,6 +104,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	@CachePut(value = "users", key = "#id")
 	@Transactional(isolation = Isolation.READ_COMMITTED)
 	public User updateUser(String id, User user) {
 		log.info("Updating user with id: {}", id);
