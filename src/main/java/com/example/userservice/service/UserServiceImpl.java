@@ -63,7 +63,7 @@ public class UserServiceImpl implements UserService {
 						return new UserException("User not found with id: " + id);
 					});
 			List<Rating> ratings = restTemplate.exchange(
-					"http://RATING-SERVICE/ratings/user/" + user.getUserId(),
+					"http://rating-service/api/ratings/user/" + user.getUserId(),
 					HttpMethod.GET, null, new ParameterizedTypeReference<List<Rating>>() {
 					}).getBody();
 			if (ratings != null) {
